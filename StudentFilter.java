@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -8,6 +9,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class StudentFilter {
+
+    private static List<String[]> updatedClassData;
 
     public static void main(String[] args) throws IOException {
         String studentFileName = "Student.csv";
@@ -80,9 +83,26 @@ public class StudentFilter {
         // 4-
         passedStudent(studentData);
         System.out.println("\n");
-        // main method closing below
+
+        failedStudent(studentData);
+        System.out.println("\n");
+
+        classStudent(classData, studentData);
+        System.out.println("\n");
+
+        failedAndGreaterThan20(studentData);
+        System.out.println("\n");
+
+        String studentId = "2";
+        deleteStudentAndAddress(studentData, addressData, studentId);
+        System.out.println("\n");
+
+        deleteClassIfNoStudent(studentData, addressData, classData, "1");
+        System.out.println("\n");
+
     }
 
+    // Method-1
     private static boolean hasAddressWithPincode(String studentId, String targetPincode, String[][] addressData) {
         long matchingAddresses = Arrays.stream(addressData)
                 .filter(addressRow -> {
@@ -162,11 +182,140 @@ public class StudentFilter {
         for (String[] student : passedStudents) {
             int marks = Integer.parseInt(student[3]);
             String studentName = student[1];
-            String result = "Pass";
+            String result = "Passed";
             System.out.println("Student Name: " + studentName + " | Marks: " + marks + " | Result: " + result);
         }
         return 0;
     }
+
+    // Method-5
+
+    private static int failedStudent(String[][] studentData) {
+        List<String[]> failedStudents = Arrays.stream(studentData)
+                .skip(1) // Skip the header row
+                .filter(studentRow -> {
+                    if (studentRow.length > 3) {
+                        int marks = Integer.parseInt(studentRow[3]);
+                        return marks <= 50; // Filter out students who passed (marks >= 50)
+                    }
+                    return false;
+                })
+                .sorted(Comparator.comparingInt(studentRow -> Integer.parseInt(studentRow[3])))
+                .collect(Collectors.toList());
+
+        for (String[] student : failedStudents) {
+            int marks = Integer.parseInt(student[3]);
+            String studentName = student[1];
+            String result = "Failed";
+            System.out.println("Student Name: " + studentName + " | Marks: " + marks + " | Result: " + result);
+        }
+        return 0;
+    }
+
+    // Method-6--Find all student of class X (ex X = A). I can pass different
+    // filters like gender, age, class, city, pincode
+    private static void classStudent(String[][] classData, String[][] studentData) {
+        List<String> classIdsA = Arrays.stream(classData)
+                .skip(1)
+                .filter(classRow -> "A".equals(classRow[1])) // Assuming class A is identified by "A" in column 1
+                .map(classRow -> classRow[0]) // Extract class IDs
+                .collect(Collectors.toList());
+
+        // Collect students with class IDs in classIdsA from studentData
+        List<String[]> studentsOfClassA = Arrays.stream(studentData)
+                .skip(1) // Skip the header row
+                .filter(studentRow -> classIdsA.contains(studentRow[2])) // Filter by class IDs
+                .collect(Collectors.toList());
+
+        // Display the students with the same class ID as class A
+        System.out.println("Students of Class A:");
+        for (String[] student : studentsOfClassA) {
+            System.out.println("Student ID: " + student[0] + " | Name: " + student[1] + " | Class ID: " + student[2]);
+        }
+        // Now, classStuList contains all students of class X = A
+    }
+
+    // Method-8
+
+    private static void failedAndGreaterThan20(String[][] studentData) {
+        List<String[]> findFailedAndGT20 = Arrays.stream(studentData)
+                .skip(1) // Skip the header row
+                .filter(studentRow -> {
+                    int marks = Integer.parseInt(studentRow[3]);
+                    int age = Integer.parseInt(studentRow[5]);
+                    return marks < 50 && age > 20;
+                })
+                .collect(Collectors.toList());
+
+        for (String[] student : findFailedAndGT20) {
+            System.out.println("Student ID: " + student[0] + " | Name: " + student[1] +
+                    " | Age: " + student[5] + " | Marks: " + student[3]);
+        }
+    }
+
+    // Method-9- I should be able to delete student. After that it should delete the
+    // respective obj from Address & Student.
+
+    private static void deleteStudentAndAddress(String[][] studentData, String[][] addressData,
+            String studentIdToDelete) {
+        // Filter the student data to remove the student to be deleted
+        List<String[]> updatedStudentData = Arrays.stream(studentData)
+                .filter(studentRow -> !studentRow[0].equals(studentIdToDelete))
+                .collect(Collectors.toList());
+
+        // Filter the address data to remove addresses associated with the deleted
+        // student
+        List<String[]> updatedAddressData = Arrays.stream(addressData)
+                .filter(addressRow -> !addressRow[3].equals(studentIdToDelete))
+                .collect(Collectors.toList());
+
+        // Print a message indicating the student has been deleted
+        System.out.println("Student with ID " + studentIdToDelete + " has been deleted.");
+
+        // Optionally, you can print the updated student and address data or save it to
+        // files.
+
+        // Updated student data
+        System.out.println("Updated Student Data:");
+        for (String[] student : updatedStudentData) {
+            System.out.println(Arrays.toString(student));
+        }
+
+        // Updated address data
+        System.out.println("Updated Address Data:");
+        for (String[] address : updatedAddressData) {
+            System.out.println(Arrays.toString(address));
+        }
+    }
+
+    // Method-10--If there is no student remaining in that class. Class should also
+    // be deleted.
+
+    private static void deleteClassIfNoStudent(String[][] studentData, String[][] addressData, String[][] classData,
+            String className) {
+        // Convert classData into a List for easier manipulation
+        List<String[]> classList = new ArrayList<>(Arrays.asList(classData));
+
+        // Use the Stream API to filter classes with no students
+        classList = classList.stream()
+                .filter(classInfo -> hasStudentInClass(studentData, classInfo[0]))
+                .collect(Collectors.toList());
+
+        // Convert the filtered List back to the array
+        classData = classList.toArray(new String[0][]);
+    }
+
+    // Helper method to check if a class has at least one student
+    private static boolean hasStudentInClass(String[][] studentData, String className) {
+        return Arrays.stream(studentData)
+                .anyMatch(studentInfo -> studentInfo[1].equals(className));
+    }
+
+    // Method-11-I should be able to read paginated students.
+    // like : read female students first 1-9
+    // like : read female students first 7-8 order by name
+    // like : read female students first 1-5 order by marks
+    // like : read female students first 9-50 order by marks
 
     // Read CSV File Method
     private static String[][] readCSV(String fileName) throws IOException {
