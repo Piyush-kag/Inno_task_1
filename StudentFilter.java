@@ -90,6 +90,7 @@ public class StudentFilter {
         classStudent(classData, studentData);
         System.out.println("\n");
 
+        System.out.println("Student who got failed and Aged above 20:-");
         failedAndGreaterThan20(studentData);
         System.out.println("\n");
 
@@ -98,6 +99,22 @@ public class StudentFilter {
         System.out.println("\n");
 
         deleteClassIfNoStudent(studentData, addressData, classData, "1");
+        System.out.println("\n");
+
+        System.out.println("female students first 1-9::-");
+        readFemaleStudentsPage(1, 9, studentData);
+        System.out.println("\n");
+
+        System.out.println("female students first 7-8 order by Name:-");
+        readFemaleStudentsSortedByNamePage(1, 9, studentData);
+        System.out.println("\n");
+
+        System.out.println("female students first 1-5 order by Marks:-");
+        readFemaleStudentsSortedByMarksPage(1, 5, studentData);
+        System.out.println("\n");
+
+        System.out.println("female students first 9-50 order by marks::-");
+        readFemaleStudentsSortedByMarksPageRange(1, 5, 1, studentData);
         System.out.println("\n");
 
     }
@@ -316,6 +333,82 @@ public class StudentFilter {
     // like : read female students first 7-8 order by name
     // like : read female students first 1-5 order by marks
     // like : read female students first 9-50 order by marks
+
+    // 11-1-Read female students first 1-9:
+
+    private static void readFemaleStudentsPage(int pageNumber, int pageSize, String[][] studentData) {
+        List<String[]> femaleStudents = Arrays.stream(studentData)
+                .filter(studentRow -> "F".equals(studentRow[4])) // Filter female students
+                .skip((pageNumber - 1) * pageSize)
+                .limit(pageSize)
+                .collect(Collectors.toList());
+
+        printStudents(femaleStudents);
+    }
+
+    private static void readFemaleStudentsSortedByNamePage(int pageNumber, int pageSize, String[][] studentData) {
+        List<String[]> femaleStudents = Arrays.stream(studentData)
+                .filter(studentRow -> "F".equals(studentRow[4])) // Filter female students
+                .sorted(Comparator.comparing(studentRow -> studentRow[1])) // Sort by name
+                .skip((pageNumber - 1) * pageSize)
+                .limit(pageSize)
+                .collect(Collectors.toList());
+
+        printStudents(femaleStudents);
+    }
+
+    private static void printStudents(List<String[]> femaleStudents) {
+
+        for (String[] student : femaleStudents) {
+            System.out.println("Student ID: " + student[0] + " | Name: " + student[1]);
+        }
+
+    }
+
+    private static void readFemaleStudentsSortedByMarksPage(int pageNumber, int pageSize, String[][] studentData) {
+
+        List<String[]> femaleStudents = Arrays.stream(studentData)
+                .filter(studentRow -> "F".equals(studentRow[4])) // Filter female students
+                .sorted(Comparator.comparing(studentRow -> Integer.parseInt(studentRow[3]))) // Sort by marks
+                .skip((pageNumber - 1) * pageSize)
+                .limit(pageSize)
+                .collect(Collectors.toList());
+
+        printStudents1(femaleStudents);
+    }
+
+    private static void readFemaleStudentsSortedByMarksPageRange(int startPage, int endPage, int pageSize,
+            String[][] studentData) {
+        List<String[]> femaleStudents = Arrays.stream(studentData)
+                .filter(studentRow -> "F".equals(studentRow[4])) // Filter female students
+                .sorted(Comparator.comparing(studentRow -> Integer.parseInt(studentRow[3]))) // Sort by marks
+                .collect(Collectors.toList());
+
+        int totalStudents = femaleStudents.size();
+        int totalPages = (int) Math.ceil((double) totalStudents / pageSize);
+
+        if (startPage < 1 || endPage > totalPages || startPage > endPage) {
+            System.out.println("Invalid page range.");
+            return;
+        }
+
+        for (int page = startPage; page <= endPage; page++) {
+            List<String[]> pageStudents = femaleStudents.stream()
+                    .skip((page - 1) * pageSize)
+                    .limit(pageSize)
+                    .collect(Collectors.toList());
+
+            System.out.println("Page " + page + ":");
+            printStudents1(pageStudents);
+        }
+    }
+
+    private static void printStudents1(List<String[]> femaleStudents) {
+
+        for (String[] student : femaleStudents) {
+            System.out.println("Student ID: " + student[0] + " | Name: " + student[1] + " | Marks: " + student[3]);
+        }
+    }
 
     // Read CSV File Method
     private static String[][] readCSV(String fileName) throws IOException {
