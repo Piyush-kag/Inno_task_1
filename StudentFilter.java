@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class StudentFilter {
@@ -94,15 +95,15 @@ public class StudentFilter {
         failedAndGreaterThan20(studentData);
         System.out.println("\n");
 
-        String studentId = "2";
+        String studentId = "3";
         deleteStudentAndAddress(studentData, addressData, studentId);
         System.out.println("\n");
 
-        deleteClassIfNoStudent(studentData, addressData, classData, "1");
+        deleteClassIfNoStudent(studentData, addressData, classData, "A");
         System.out.println("\n");
 
         System.out.println("female students first 1-9::-");
-        readFemaleStudentsPage(1, 9, studentData);
+        readFemaleStudentsPage(1, 3, studentData);
         System.out.println("\n");
 
         System.out.println("female students first 7-8 order by Name:-");
@@ -310,23 +311,30 @@ public class StudentFilter {
 
     private static void deleteClassIfNoStudent(String[][] studentData, String[][] addressData, String[][] classData,
             String className) {
-        // Convert classData into a List for easier manipulation
-        List<String[]> classList = new ArrayList<>(Arrays.asList(classData));
+        Set<String> classNamesWithStudents = Arrays.stream(studentData)
+                .map(studentInfo -> studentInfo[2])
+                .collect(Collectors.toSet());
 
-        // Use the Stream API to filter classes with no students
-        classList = classList.stream()
-                .filter(classInfo -> hasStudentInClass(studentData, classInfo[0]))
+        List<String[]> remainingClasses = Arrays.stream(classData)
+                .filter(classInfo -> classNamesWithStudents.contains(classInfo[0]))
                 .collect(Collectors.toList());
+        displayDe(remainingClasses.toArray(new String[0][]));
+    }
 
-        // Convert the filtered List back to the array
-        classData = classList.toArray(new String[0][]);
+    private static void displayDe(String[][] classData) {
+        System.out.println("Remaining Classes:-\n");
+        for (String[] classInfo : classData) {
+            System.out.println(Arrays.toString(classInfo));
+
+        }
     }
 
     // Helper method to check if a class has at least one student
-    private static boolean hasStudentInClass(String[][] studentData, String className) {
-        return Arrays.stream(studentData)
-                .anyMatch(studentInfo -> studentInfo[1].equals(className));
-    }
+    // private static boolean hasStudentInClass(String[][] studentData, String
+    // className) {
+    // return Arrays.stream(studentData)
+    // .anyMatch(studentInfo -> studentInfo[1].equals(className));
+    // }
 
     // Method-11-I should be able to read paginated students.
     // like : read female students first 1-9
@@ -410,34 +418,54 @@ public class StudentFilter {
         }
     }
 
-    // Read CSV File Method
-    private static String[][] readCSV(String fileName) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(fileName));
-        String line;
-        int numRows = 0;
-        int numCols = 0;
+    // Read CSV File Method-1
+    // private static String[][] readCSV(String fileName) throws IOException {
+    // BufferedReader reader = new BufferedReader(new FileReader(fileName));
+    // String line;
+    // int numRows = 0;
+    // int numCols = 0;
 
-        while ((line = reader.readLine()) != null) {
-            numRows++;
-            String[] row = line.split(",");
-            numCols = Math.max(numCols, row.length);
+    // while ((line = reader.readLine()) != null) {
+    // numRows++;
+    // String[] row = line.split(",");
+    // numCols = Math.max(numCols, row.length);
+    // }
+
+    // String[][] data = new String[numRows][numCols];
+    // reader.close();
+    // reader = new BufferedReader(new FileReader(fileName));
+
+    // // Read the CSV data into the array
+    // int rowIdx = 0;
+    // while ((line = reader.readLine()) != null) {
+    // String[] row = line.split(",");
+    // for (int colIdx = 0; colIdx < row.length; colIdx++) {
+    // data[rowIdx][colIdx] = row[colIdx];
+    // }
+    // rowIdx++;
+    // }
+
+    // reader.close();
+    // return data;
+    // }
+    // Read CSV Method-2 Using Stream API Answer-7
+
+    public static String[][] readCSV(String fileName) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            List<String[]> lines = reader.lines()
+                    .map(line -> line.split(","))
+                    .collect(Collectors.toList());
+
+            int numCols = lines.stream()
+                    .mapToInt(row -> row.length)
+                    .max()
+                    .orElse(0);
+
+            String[][] data = lines.stream()
+                    .map(row -> Arrays.copyOf(row, numCols)) // Pad rows with empty strings if needed
+                    .toArray(String[][]::new);
+
+            return data;
         }
-
-        String[][] data = new String[numRows][numCols];
-        reader.close();
-        reader = new BufferedReader(new FileReader(fileName));
-
-        // Read the CSV data into the array
-        int rowIdx = 0;
-        while ((line = reader.readLine()) != null) {
-            String[] row = line.split(",");
-            for (int colIdx = 0; colIdx < row.length; colIdx++) {
-                data[rowIdx][colIdx] = row[colIdx];
-            }
-            rowIdx++;
-        }
-
-        reader.close();
-        return data;
     }
 }
