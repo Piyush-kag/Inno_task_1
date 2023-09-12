@@ -299,12 +299,16 @@ public class StudentFilter {
                 .collect(Collectors.toList());
 
         try (BufferedWriter addressWriter = new BufferedWriter(new FileWriter(addressCsvFilePath))) {
-            for (String[] row : updatedAddressData) {
-                // Join the array elements with commas to create a CSV row
-                String csvRow = String.join(",", row);
-                addressWriter.write(csvRow);
-                addressWriter.newLine();
-            }
+            updatedAddressData.stream()
+                    .map(csvrow -> String.join(",", csvrow))
+                    .forEach(Row -> {
+                        try {
+                            addressWriter.write(Row);
+                            addressWriter.newLine();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
             System.out.println("Addresses associated with Student ID " + studentIdToDelete
                     + " have been deleted from address CSV.");
         } catch (IOException e) {
@@ -491,4 +495,4 @@ public class StudentFilter {
             return data;
         }
     }
-                        }
+            }
