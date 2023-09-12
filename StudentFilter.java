@@ -1,7 +1,8 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -10,8 +11,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class StudentFilter {
-
-    private static List<String[]> updatedClassData;
 
     public static void main(String[] args) throws IOException {
         String studentFileName = "Student.csv";
@@ -95,11 +94,10 @@ public class StudentFilter {
         failedAndGreaterThan20(studentData);
         System.out.println("\n");
 
-        String studentId = "3";
-        deleteStudentAndAddress(studentData, addressData, studentId);
+        deleteStudentAndAddress(addressData, studentData, "3", "Student.csv", "Address.csv");
         System.out.println("\n");
 
-        deleteClassIfNoStudent(studentData, addressData, classData, "A");
+        deleteClassIfNoStudent(studentData, addressData, classData, "Class.csv");
         System.out.println("\n");
 
         System.out.println("female students first 1-9::-");
@@ -273,44 +271,51 @@ public class StudentFilter {
 
     // Method-9- I should be able to delete student. After that it should delete the
     // respective obj from Address & Student.
-
-    private static void deleteStudentAndAddress(String[][] studentData, String[][] addressData,
-            String studentIdToDelete) {
-        // Filter the student data to remove the student to be deleted
+    private static void deleteStudentAndAddress(String[][] addressData, String[][] studentData,
+            String studentIdToDelete,
+            String studentCsvFilePath, String addressCsvFilePath) {
         List<String[]> updatedStudentData = Arrays.stream(studentData)
                 .filter(studentRow -> !studentRow[0].equals(studentIdToDelete))
                 .collect(Collectors.toList());
 
-        // Filter the address data to remove addresses associated with the deleted
-        // student
+        // Write the updated student data back to the student CSV file
+        try (BufferedWriter studentWriter = new BufferedWriter(new FileWriter(studentCsvFilePath))) {
+            updatedStudentData.stream()
+                    .map(row -> String.join(",", row))
+                    .forEach(csvRow -> {
+                        try {
+                            studentWriter.write(csvRow);
+                            studentWriter.newLine();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+            System.out.println("Student with ID " + studentIdToDelete + " has been deleted.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         List<String[]> updatedAddressData = Arrays.stream(addressData)
                 .filter(addressRow -> !addressRow[3].equals(studentIdToDelete))
                 .collect(Collectors.toList());
 
-        // Print a message indicating the student has been deleted
-        System.out.println("Student with ID " + studentIdToDelete + " has been deleted.");
-
-        // Optionally, you can print the updated student and address data or save it to
-        // files.
-
-        // Updated student data
-        System.out.println("Updated Student Data:");
-        for (String[] student : updatedStudentData) {
-            System.out.println(Arrays.toString(student));
-        }
-
-        // Updated address data
-        System.out.println("Updated Address Data:");
-        for (String[] address : updatedAddressData) {
-            System.out.println(Arrays.toString(address));
+        try (BufferedWriter addressWriter = new BufferedWriter(new FileWriter(addressCsvFilePath))) {
+            for (String[] row : updatedAddressData) {
+                // Join the array elements with commas to create a CSV row
+                String csvRow = String.join(",", row);
+                addressWriter.write(csvRow);
+                addressWriter.newLine();
+            }
+            System.out.println("Addresses associated with Student ID " + studentIdToDelete
+                    + " have been deleted from address CSV.");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
-
     // Method-10--If there is no student remaining in that class. Class should also
     // be deleted.
 
-    private static void deleteClassIfNoStudent(String[][] studentData, String[][] addressData, String[][] classData,
-            String className) {
+    public static void deleteClassIfNoStudent(String[][] studentData, String[][] addressData, String[][] classData,
+            String classCsvFilePath) {
         Set<String> classNamesWithStudents = Arrays.stream(studentData)
                 .map(studentInfo -> studentInfo[2])
                 .collect(Collectors.toSet());
@@ -318,14 +323,32 @@ public class StudentFilter {
         List<String[]> remainingClasses = Arrays.stream(classData)
                 .filter(classInfo -> classNamesWithStudents.contains(classInfo[0]))
                 .collect(Collectors.toList());
+
+        // Display remaining classes
         displayDe(remainingClasses.toArray(new String[0][]));
+
+        // Write the remaining classes back to the class CSV file
+        writeClassDataToCSV(remainingClasses, classCsvFilePath);
     }
 
     private static void displayDe(String[][] classData) {
         System.out.println("Remaining Classes:-\n");
         for (String[] classInfo : classData) {
             System.out.println(Arrays.toString(classInfo));
+        }
+    }
 
+    private static void writeClassDataToCSV(List<String[]> classData, String classCsvFilePath) {
+        try (BufferedWriter classWriter = new BufferedWriter(new FileWriter(classCsvFilePath))) {
+            for (String[] row : classData) {
+                // Join the array elements with commas to create a CSV row
+                String csvRow = String.join(",", row);
+                classWriter.write(csvRow);
+                classWriter.newLine();
+            }
+            System.out.println("Updated class data has been written to " + classCsvFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -468,4 +491,4 @@ public class StudentFilter {
             return data;
         }
     }
-}
+                        }
